@@ -11,24 +11,33 @@ const { createNotification, createNotifications } = require('../utils/notificati
 
 const assignmentUploadDir = path.join(__dirname, '..', 'uploads', 'assignments');
 
+let assignmentStorage = multer.memoryStorage(); // Fallback to memory storage
+let storageMode = 'memory';
+
+// Try to use disk storage if directory is writable
 try {
   if (!fs.existsSync(assignmentUploadDir)) {
     fs.mkdirSync(assignmentUploadDir, { recursive: true });
   }
+  // If we reach here, directory exists and is writable
+  assignmentStorage = multer.diskStorage({
+    destination: (_req, _file, cb) => cb(null, assignmentUploadDir),
+    filename: (_req, file, cb) => {
+      const safeName = String(file.originalname || 'file')
+        .replace(/[^a-zA-Z0-9._-]/g, '_')
+        .slice(-80);
+      const unique = `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
+      cb(null, `${unique}-${safeName}`);
+    },
+  });
+  storageMode = 'disk';
+  console.log(`✅ Using disk storage for uploads: ${assignmentUploadDir}`);
 } catch (err) {
-  console.warn(`Warning: Could not create upload directory at ${assignmentUploadDir}. Uploads will use in-memory storage:`, err.message);
+  console.warn(`⚠️  Disk storage unavailable (${err.code}). Using in-memory storage for file uploads.`);
+  console.warn(`   Files uploaded on serverless platforms will not persist.`);
+  assignmentStorage = multer.memoryStorage();
+  storageMode = 'memory';
 }
-
-const assignmentStorage = multer.diskStorage({
-  destination: (_req, _file, cb) => cb(null, assignmentUploadDir),
-  filename: (_req, file, cb) => {
-    const safeName = String(file.originalname || 'file')
-      .replace(/[^a-zA-Z0-9._-]/g, '_')
-      .slice(-80);
-    const unique = `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
-    cb(null, `${unique}-${safeName}`);
-  },
-});
 
 const assignmentUpload = multer({
   storage: assignmentStorage,
@@ -102,13 +111,26 @@ assignmentRouter.post('/upload', protect, restrictTo('teacher', 'admin'), assign
     return res.status(400).json({ error: 'Please upload at least one file.' });
   }
 
-  const uploadedFiles = files.map((file) => ({
-    name: file.originalname,
-    fileName: file.filename,
-    size: file.size,
-    mimeType: file.mimetype,
-    url: toPublicUploadUrl(req, file.filename),
-  }));
+  const uploadedFiles = files.map((file) => {
+    const fileData = {
+      name: file.originalname || file.name,
+      size: file.size,
+      mimeType: file.mimetype,
+    };
+    
+    // Only add URL if using disk storage
+    if (storageMode === 'disk' && file.filename) {
+      fileData.fileName = file.filename;
+      fileData.url = toPublicUploadUrl(req, file.filename);
+    } else {
+      // For memory storage, provide buffer info
+      fileData.fileName = null;
+      fileData.url = null;
+      fileData.stored = 'memory'; // Indicates file is in memory, not persisted
+    }
+    
+    return fileData;
+  });
 
   res.status(201).json({
     files: uploadedFiles,

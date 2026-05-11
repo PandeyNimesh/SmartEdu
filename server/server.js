@@ -88,7 +88,12 @@ app.use('/api/auth', authLimiter);
 // Body parsing
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true }));
-app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
+
+// Serve uploads directory only if it exists (may not exist on serverless)
+const uploadsDir = path.join(__dirname, 'uploads');
+if (require('fs').existsSync(uploadsDir)) {
+  app.use('/uploads', express.static(uploadsDir));
+}
 
 // Logging (development only)
 if (process.env.NODE_ENV === 'development') {
@@ -266,9 +271,15 @@ if (ENABLE_SOCKET_IO) {
 // Global error handler (must be last)
 app.use(errorHandler);
 
-const PORT = process.env.PORT || 8080;
-server.listen(PORT, () => {
-  console.log(`\n🎓 Smart Education API running on port ${PORT} [${process.env.NODE_ENV}]\n`);
-});
+// Only listen if not in a serverless environment
+if (process.env.VERCEL !== '1' && !process.env.AWS_LAMBDA_FUNCTION_NAME) {
+  const PORT = process.env.PORT || 8080;
+  server.listen(PORT, () => {
+    console.log(`\n🎓 Smart Education API running on port ${PORT} [${process.env.NODE_ENV}]\n`);
+  });
+}
 
-module.exports = { app, io, ENABLE_SOCKET_IO };
+// Export app as default for Vercel
+module.exports = app;
+module.exports.io = io;
+module.exports.ENABLE_SOCKET_IO = ENABLE_SOCKET_IO;

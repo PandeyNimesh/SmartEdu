@@ -28,6 +28,9 @@ const server = http.createServer(app);
 
 app.disable('x-powered-by');
 
+// Environment variable to control Socket.io (useful for serverless deployment)
+const ENABLE_SOCKET_IO = process.env.ENABLE_SOCKET_IO !== 'false';
+
 const allowedOrigins = (process.env.CLIENT_URL || 'http://localhost:5173')
   .split(',')
   .map((origin) => origin.trim().replace(/\/+$/, ''))
@@ -44,14 +47,17 @@ const corsOptions = {
   credentials: true,
 };
 
-// Socket.io for real-time discussions
-const io = new Server(server, {
-  cors: {
-    origin: allowedOrigins,
-    methods: ['GET', 'POST'],
-    credentials: true,
-  },
-});
+// Socket.io for real-time discussions (conditionally enabled)
+let io = null;
+if (ENABLE_SOCKET_IO) {
+  io = new Server(server, {
+    cors: {
+      origin: allowedOrigins,
+      methods: ['GET', 'POST'],
+      credentials: true,
+    },
+  });
+}
 
 // Connect to MongoDB
 connectDB();
@@ -89,9 +95,13 @@ if (process.env.NODE_ENV === 'development') {
   app.use(morgan('dev'));
 }
 
-// Attach io to request for use in controllers
+// Attach io to request for use in controllers (only if Socket.io is enabled)
 app.use((req, _res, next) => {
-  req.io = io;
+  if (ENABLE_SOCKET_IO) {
+    req.io = io;
+  } else {
+    req.io = null; // Socket.io disabled
+  }
   next();
 });
 
@@ -116,8 +126,9 @@ app.get('/api/health', (_req, res) => {
   res.json({ status: 'ok', environment: process.env.NODE_ENV, timestamp: new Date() });
 });
 
-// Socket.io — real-time discussions
-io.on('connection', (socket) => {
+// Socket.io — real-time discussions (only if enabled)
+if (ENABLE_SOCKET_IO) {
+  io.on('connection', (socket) => {
   console.log('Client connected:', socket.id);
 
   const getLiveClassParticipants = (classId) => {
@@ -246,7 +257,11 @@ io.on('connection', (socket) => {
     leaveLiveClass();
     console.log('Client disconnected:', socket.id);
   });
-});
+  });
+  console.log('✅ Socket.io enabled for real-time features');
+} else {
+  console.log('⚠️  Socket.io disabled - real-time features unavailable');
+}
 
 // Global error handler (must be last)
 app.use(errorHandler);
@@ -256,4 +271,4 @@ server.listen(PORT, () => {
   console.log(`\n🎓 Smart Education API running on port ${PORT} [${process.env.NODE_ENV}]\n`);
 });
 
-module.exports = { app, io };
+module.exports = { app, io, ENABLE_SOCKET_IO };

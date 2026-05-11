@@ -122,7 +122,9 @@ discussionRouter.post('/', protect, async (req, res, next) => {
       discussionCount,
     });
 
-    req.io.to(`course:${courseId}`).emit('new-discussion', populated);
+    if (req.io) {
+      req.io.to(`course:${courseId}`).emit('new-discussion', populated);
+    }
     res.status(201).json({ discussion: populated, awardedBadges });
   } catch (err) { next(err); }
 });
@@ -141,10 +143,12 @@ discussionRouter.post('/:id/reply', protect, async (req, res, next) => {
     });
     await discussion.save();
 
-    req.io.to(`course:${discussion.course.toString()}`).emit('new-reply', {
-      discussionId: discussion._id,
-      messageId: req.body.messageId,
-    });
+    if (req.io) {
+      req.io.to(`course:${discussion.course.toString()}`).emit('new-reply', {
+        discussionId: discussion._id,
+        messageId: req.body.messageId,
+      });
+    }
     res.json({ discussion });
   } catch (err) { next(err); }
 });
@@ -389,10 +393,12 @@ discussionRouter.post('/chats/:chatId/messages', protect, async (req, res, next)
     await chat.populate('messages.sender', 'name avatar role');
     const message = chat.messages[chat.messages.length - 1];
 
-    req.io.to(`chat:${chat._id.toString()}`).emit('new-chat-message', {
-      chatId: chat._id.toString(),
-      message,
-    });
+    if (req.io) {
+      req.io.to(`chat:${chat._id.toString()}`).emit('new-chat-message', {
+        chatId: chat._id.toString(),
+        message,
+      });
+    }
 
     res.status(201).json({ message, chatId: chat._id.toString() });
   } catch (err) {

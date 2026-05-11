@@ -375,11 +375,13 @@ router.post('/:id/participants/:studentId/camera/grant', protect, restrictTo('te
     liveClass.participants[participantIndex].cameraApprovedAt = new Date();
     await liveClass.save();
 
-    req.io.to(`live-class:${liveClass._id}`).emit('live-class:settings-updated', {
-      liveClassId: String(liveClass._id),
-      type: 'camera-granted',
-      studentId: String(req.params.studentId),
-    });
+    if (req.io) {
+      req.io.to(`live-class:${liveClass._id}`).emit('live-class:settings-updated', {
+        liveClassId: String(liveClass._id),
+        type: 'camera-granted',
+        studentId: String(req.params.studentId),
+      });
+    }
 
     const refreshed = await LiveClass.findById(liveClass._id)
       .populate('course', 'title instructor banner thumbnail')
@@ -432,11 +434,13 @@ router.post('/:id/participants/:studentId/camera/revoke', protect, restrictTo('t
 
     await liveClass.save();
 
-    req.io.to(`live-class:${liveClass._id}`).emit('live-class:settings-updated', {
-      liveClassId: String(liveClass._id),
-      type: 'camera-revoked',
-      studentId: String(req.params.studentId),
-    });
+    if (req.io) {
+      req.io.to(`live-class:${liveClass._id}`).emit('live-class:settings-updated', {
+        liveClassId: String(liveClass._id),
+        type: 'camera-revoked',
+        studentId: String(req.params.studentId),
+      });
+    }
 
     const refreshed = await LiveClass.findById(liveClass._id)
       .populate('course', 'title instructor banner thumbnail')
@@ -498,11 +502,13 @@ router.post('/:id/spotlight', protect, restrictTo('teacher', 'admin'), async (re
 
     await liveClass.save();
 
-    req.io.to(`live-class:${liveClass._id}`).emit('live-class:settings-updated', {
-      liveClassId: String(liveClass._id),
-      type: 'spotlight-updated',
-      studentId: studentId ? String(studentId) : null,
-    });
+    if (req.io) {
+      req.io.to(`live-class:${liveClass._id}`).emit('live-class:settings-updated', {
+        liveClassId: String(liveClass._id),
+        type: 'spotlight-updated',
+        studentId: studentId ? String(studentId) : null,
+      });
+    }
 
     const refreshed = await LiveClass.findById(liveClass._id)
       .populate('course', 'title instructor banner thumbnail')

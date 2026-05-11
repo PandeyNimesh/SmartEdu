@@ -1,4 +1,3 @@
-// ─── Assignments ──────────────────────────────────────────────────────────────
 const express = require('express');
 const fs = require('fs');
 const path = require('path');
@@ -11,7 +10,14 @@ const { addXpToUser, awardEligibleBadges } = require('../utils/gamification');
 const { createNotification, createNotifications } = require('../utils/notifications');
 
 const assignmentUploadDir = path.join(__dirname, '..', 'uploads', 'assignments');
-fs.mkdirSync(assignmentUploadDir, { recursive: true });
+
+try {
+  if (!fs.existsSync(assignmentUploadDir)) {
+    fs.mkdirSync(assignmentUploadDir, { recursive: true });
+  }
+} catch (err) {
+  console.warn(`Warning: Could not create upload directory at ${assignmentUploadDir}. Uploads will use in-memory storage:`, err.message);
+}
 
 const assignmentStorage = multer.diskStorage({
   destination: (_req, _file, cb) => cb(null, assignmentUploadDir),

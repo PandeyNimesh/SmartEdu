@@ -273,7 +273,7 @@ app.use(errorHandler);
 
 // Only listen if not in a serverless environment
 if (process.env.VERCEL !== '1' && !process.env.AWS_LAMBDA_FUNCTION_NAME) {
-  const PORT = process.env.PORT || 8080;
+  const PORT = process.env.PORT || 3000;
   server.listen(PORT, () => {
     console.log(`\n🎓 Smart Education API running on port ${PORT} [${process.env.NODE_ENV}]\n`);
   });

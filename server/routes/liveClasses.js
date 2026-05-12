@@ -228,6 +228,13 @@ router.post('/:id/start', protect, restrictTo('teacher', 'admin'), async (req, r
     if (liveClass.status !== 'live') {
       liveClass.status = 'live';
       liveClass.startedAt = new Date();
+
+      // Auto-grant camera permission to all students when class starts
+      liveClass.participants.forEach((participant) => {
+        participant.cameraApproved = true;
+        participant.cameraApprovedAt = new Date();
+      });
+
       await liveClass.save();
 
       const studentIds = liveClass.participants.map((participant) => participant.student?._id || participant.student);
@@ -255,6 +262,15 @@ router.post('/:id/start', protect, restrictTo('teacher', 'admin'), async (req, r
             },
           })),
         });
+
+        // Notify all students about camera access
+        if (req.io) {
+          req.io.to(`live-class:${liveClass._id}`).emit('live-class:settings-updated', {
+            liveClassId: String(liveClass._id),
+            type: 'all-cameras-granted',
+            message: 'All students can now enable their cameras',
+          });
+        }
       }
     }
 

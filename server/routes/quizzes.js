@@ -64,7 +64,6 @@ router.get('/:id', protect, async (req, res, next) => {
 router.post('/', protect, restrictTo('teacher', 'admin'), async (req, res, next) => {
   try {
     const { course: courseId, title, description, timeLimit, passingScore, xpReward, isPublished, questions } = req.body;
-
     if (!courseId) {
       return res.status(400).json({ error: 'Course ID is required.' });
     }

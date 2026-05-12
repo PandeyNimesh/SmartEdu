@@ -8,17 +8,23 @@ const AuthShell: React.FC<{ children: React.ReactNode; title: string; subtitle: 
   <div className="min-h-screen bg-background flex">
     {/* Left — branding panel */}
     <div className="hidden lg:flex lg:w-[45%] bg-primary flex-col justify-between p-12 relative overflow-hidden">
-      {/* Grid pattern */}
-      <div className="absolute inset-0 opacity-[0.07]" style={{
-        backgroundImage: 'linear-gradient(hsl(var(--primary-foreground)) 1px, transparent 1px), linear-gradient(90deg, hsl(var(--primary-foreground)) 1px, transparent 1px)',
-        backgroundSize: '40px 40px'
-      }} />
+      {/* Background Image */}
+      <div className="absolute inset-0">
+        <img 
+          src="/image/edu.jpg" 
+          alt="Education background" 
+          className="w-full h-full object-cover"
+        />
+      </div>
+      {/* Gradient Overlay */}
+      <div className="absolute inset-0 bg-gradient-to-br from-blue-600/70 via-purple-600/60 to-blue-700/70" />
+      
       <div className="relative z-10">
         <div className="flex items-center gap-3">
-          <div className="h-10 w-10 rounded-xl bg-amber-500 flex items-center justify-center">
+          <div className="h-10 w-10 rounded-xl bg-amber-400 flex items-center justify-center shadow-lg">
             <GraduationCap size={22} className="text-slate-900" />
           </div>
-          <span className="font-serif text-2xl text-white">SmartEdu</span>
+          <span className="font-serif text-2xl text-white font-bold">SmartEdu</span>
         </div>
       </div>
       <div className="relative z-10 space-y-6">
@@ -28,8 +34,8 @@ const AuthShell: React.FC<{ children: React.ReactNode; title: string; subtitle: 
         <div className="grid grid-cols-3 gap-4 pt-4">
           {[['12,000+', 'Active Learners'], ['240+', 'Expert Courses'], ['94%', 'Completion Rate']].map(([n, l]) => (
             <div key={l}>
-              <div className="text-2xl font-semibold text-amber-400">{n}</div>
-              <div className="text-sm text-white/60 mt-0.5">{l}</div>
+              <div className="text-2xl font-semibold text-amber-300">{n}</div>
+              <div className="text-sm text-white/70 mt-0.5">{l}</div>
             </div>
           ))}
         </div>
